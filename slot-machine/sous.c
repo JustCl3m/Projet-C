@@ -1,3 +1,6 @@
+//gcc sous.c -o sous -lSDL2 -lSDL2_image -lSDL2_ttf -lm
+
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
