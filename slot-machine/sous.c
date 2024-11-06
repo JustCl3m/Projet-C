@@ -1,6 +1,5 @@
 //gcc sous.c -o sous -lSDL2 -lSDL2_image -lSDL2_ttf -lm
 
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <stdlib.h>
@@ -10,6 +9,11 @@
 // Définir la taille de la fenêtre et des slots
 #define WINDOW_WIDTH 1920
 #define WINDOW_HEIGHT 1080
+
+// Taille personnalisée pour l'image de fond
+#define BACKGROUND_WIDTH 1600  // Par exemple, 1600 pixels
+#define BACKGROUND_HEIGHT 950  // Par exemple, 900 pixels
+
 #define SLOT_WIDTH 150
 #define SLOT_HEIGHT 150
 #define NUM_SLOTS 3
@@ -70,8 +74,10 @@ int main() {
         // Effacer l'écran
         SDL_RenderClear(renderer);
 
-        // Afficher l'arrière-plan
-        renderImage(renderer, background, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        // Afficher l'arrière-plan avec la taille personnalisée
+        int backgroundX = (WINDOW_WIDTH - BACKGROUND_WIDTH) / 2 ;  // Centrer horizontalement
+        int backgroundY = (WINDOW_HEIGHT - BACKGROUND_HEIGHT) / 2 -50 ;  // Centrer verticalement
+        renderImage(renderer, background, backgroundX, backgroundY, BACKGROUND_WIDTH, BACKGROUND_HEIGHT);
 
         if (spinning) {
             // Calculer le temps écoulé
@@ -92,10 +98,10 @@ int main() {
         }
 
         // Afficher les rouleaux avec des symboles choisis, centrés horizontalement
-        int startX = (WINDOW_WIDTH - (NUM_SLOTS * SLOT_WIDTH + (NUM_SLOTS - 1) * 30)) / 2; // Calcul de la position de départ centrée
+        int startX = 640; // Calcul de la position de départ centrée
 
         for (int i = 0; i < NUM_SLOTS; i++) {
-            int xPos = startX + i * (SLOT_WIDTH + 30);  // Position horizontale centrée
+            int xPos = startX + i * (SLOT_WIDTH + 105);  // Position horizontale centrée
             int yPos = (WINDOW_HEIGHT - SLOT_HEIGHT) / 2;  // Position verticale centrée
             renderImage(renderer, symbols[slots[i]], xPos, yPos, SLOT_WIDTH, SLOT_HEIGHT);
         }
@@ -150,7 +156,7 @@ Image loadImage(const char *path, SDL_Renderer *renderer) {
     return img;
 }
 
-// Modification pour permettre le redimensionnement à SLOT_WIDTH x SLOT_HEIGHT
+// Affiche une image à une position et taille données
 void renderImage(SDL_Renderer *renderer, Image img, int x, int y, int width, int height) {
     SDL_Rect dstRect = {x, y, width, height};
     SDL_RenderCopy(renderer, img.texture, NULL, &dstRect);
