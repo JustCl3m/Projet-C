@@ -75,7 +75,7 @@ int main() {
                 if (balance > 0) {  // Assurez-vous qu'il y a de l'argent
                     spinning = 1;
                     spinStartTime = SDL_GetTicks(); // Enregistrer le temps de départ du tirage
-                    balance--;  // Déduire 1 unité de la balance pour jouer
+                    balance-=100;  // Déduire 1 unité de la balance pour jouer
                 }
             }
         }
@@ -211,7 +211,7 @@ void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x,
 void updateBalance(int *balance, int *slots) {
     // Par exemple, si tous les symboles sont les mêmes (gagnant), on double le solde
     if (slots[0] == slots[1] && slots[1] == slots[2]) {
-        *balance += 10;  // Gain de 10 unités si le joueur gagne
+        *balance += 50;  // Gain de 10 unités si le joueur gagne
     }
 }
 
