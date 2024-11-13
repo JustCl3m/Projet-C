@@ -8,25 +8,33 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 800
 
-#define ROULETTE_WIDTH 850
+#define ROULETTE_WIDTH 500
 #define ROULETTE_HEIGHT 500
 #define BALL_WIDTH 20
 #define BALL_HEIGHT 20
 
-#define ROULETTE_RADIUS 160
-#define BALL_RADIUS_MAX 180  // Rayon initial pour la boule (au bord de la roulette)
+#define ROULETTE_RADIUS 250   // Rayon de la roulette
+#define BALL_RADIUS_MAX 240   // Rayon initial pour la boule (proche du bord de la roulette)
+#define BALL_RADIUS_MIN 180   // Rayon minimum pour que la balle ne se rapproche pas trop du centre
 
 typedef struct {
     SDL_Texture *texture;
     int width, height;
 } Image;
 
+// Ordre des numéros sur une roulette française
+int rouletteSectors[37] = {
+    0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 
+    24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+};
+
 int init(SDL_Window **window, SDL_Renderer **renderer);
 Image loadImage(const char *path, SDL_Renderer *renderer);
 void renderImage(SDL_Renderer *renderer, Image img, int x, int y, int width, int height, float angle);
 void cleanUp(SDL_Window *window, SDL_Renderer *renderer, Image *roulette, Image *ball);
-void moveBallTowardsCenter(float *ballAngle, float *ballSpeed, float *ballRadius, float deceleration, int *stopped);
+void moveBallTowardsCenter(float *ballAngle, float *ballSpeed, float *ballRadius, float *deceleration, int *stopped);
 void moveBallWithRouletteSpeed(float *ballAngle, float rouletteSpeed);
+int getSectorFromAngle(float ballAngle);
 
 int main() {
     SDL_Window *window = NULL;
@@ -50,11 +58,14 @@ int main() {
     int stopped = 0;
     float ballAngle = 0;           // Angle de la balle
     float rouletteAngle = 0;       // Angle de la roulette
-    float ballSpeed = 4.0;         // Vitesse initiale de la balle
+    float ballSpeed = 3.0;         // Vitesse initiale de la balle
     float rouletteSpeed = 5.0;     // Vitesse initiale de la roulette (plus élevée pour un arrêt plus long)
     float deceleration = 0.01;     // Décélération de la balle
     float rouletteDeceleration = 0.005; // Décélération plus lente pour la roulette
     float ballRadius = BALL_RADIUS_MAX;  // Commence au bord et descend vers le centre
+
+    // Décalage nécessaire pour aligner correctement les secteurs
+    float angleOffset = 10.0f; // Décalage en degrés
 
     while (running) {
         SDL_Event e;
@@ -86,17 +97,23 @@ int main() {
         renderImage(renderer, roulette, rouletteX, rouletteY, ROULETTE_WIDTH, ROULETTE_HEIGHT, rouletteAngle);
 
         if (!stopped) {
-            moveBallTowardsCenter(&ballAngle, &ballSpeed, &ballRadius, deceleration, &stopped);
+            moveBallTowardsCenter(&ballAngle, &ballSpeed, &ballRadius, &deceleration, &stopped);
         } else {
             // Une fois que la balle s'est arrêtée, elle prend la vitesse de la roulette
             moveBallWithRouletteSpeed(&ballAngle, rouletteSpeed);
-            ballRadius = 100;  // La boule reste à un rayon fixe une fois arrêtée
+            ballRadius = ROULETTE_RADIUS - 80 ;  // La boule reste à un rayon fixe une fois arrêtée
         }
 
         // Calcul de la position de la boule en fonction du rayon actuel
         int ballX = WINDOW_WIDTH / 2 + cos(ballAngle) * ballRadius - BALL_WIDTH / 2;
         int ballY = WINDOW_HEIGHT / 2 + sin(ballAngle) * ballRadius - BALL_HEIGHT / 2;
         renderImage(renderer, ball, ballX, ballY, BALL_WIDTH, BALL_HEIGHT, 0);
+
+        // Si la balle s'est arrêtée, déterminer le secteur (calcul uniquement après l'arrêt)
+        if (stopped) {
+            int sector = getSectorFromAngle(ballAngle + angleOffset); // Appliquer le décalage d'angle
+            printf("La balle est dans le secteur %d\n", rouletteSectors[sector]);
+        }
 
         SDL_RenderPresent(renderer);
         SDL_Delay(16);
@@ -157,23 +174,33 @@ void cleanUp(SDL_Window *window, SDL_Renderer *renderer, Image *roulette, Image 
     SDL_Quit();
 }
 
-// Fonction de déplacement de la boule vers le centre
-void moveBallTowardsCenter(float *ballAngle, float *ballSpeed, float *ballRadius, float deceleration, int *stopped) {
+void moveBallTowardsCenter(float *ballAngle, float *ballSpeed, float *ballRadius, float *deceleration, int *stopped) {
     if (*ballSpeed > 0) {
-        *ballAngle += *ballSpeed * 0.05;   // Avance de l'angle en fonction de la vitesse
-        *ballSpeed -= deceleration;        // Applique la décélération
-        *ballRadius -= 0.3;                // Diminue le rayon pour aller vers le centre
-
-        if (*ballRadius <= 100) {          // Atteindre le centre (rayon final pour l'arrêt)
-            *ballRadius = 100;
+        *ballAngle += *ballSpeed * 0.05;
+        *ballSpeed -= *deceleration * log(*ballSpeed + 15);
+        if (*ballSpeed < 0.05) {
+            *ballSpeed = 0.05;
+        }
+        *ballRadius -= 0.3;
+        if (*ballRadius <= BALL_RADIUS_MIN) {
+            *ballRadius = BALL_RADIUS_MIN;
             *stopped = 1;
         }
-    } else {
-        *stopped = 1;
     }
 }
 
-// Fonction pour déplacer la balle à la vitesse de la roulette après son arrêt
 void moveBallWithRouletteSpeed(float *ballAngle, float rouletteSpeed) {
-    *ballAngle -= rouletteSpeed * 0.01752;  // La balle continue de tourner à la vitesse de la roulette
+    *ballAngle -= rouletteSpeed * 0.01752;
+}
+
+int getSectorFromAngle(float ballAngle) {
+    float angleInDegrees = fmod(ballAngle * (180 / M_PI), 360.0f);
+    if (angleInDegrees < 0) angleInDegrees += 360.0f;
+
+    // Chaque secteur mesure 360 / 37 degrés
+    float degreesPerSector = 360.0f / 37.0f;
+
+    // Calculer l'index du secteur
+    int sectorIndex = (int)(angleInDegrees / degreesPerSector);
+    return sectorIndex;
 }
