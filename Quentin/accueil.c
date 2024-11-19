@@ -7,7 +7,7 @@ int balance = 0;  // Variable pour stocker le solde d'argent
 
 // Fonction pour afficher du texte
 void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int x, int y) {
-    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color); // Rendu du texte
+    SDL_Surface *surface = TTF_RenderText_Blended(font, text, color);
     if (!surface) {
         printf("Erreur lors du rendu du texte : %s\n", TTF_GetError());
         return;
@@ -20,7 +20,7 @@ void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_C
         return;
     }
 
-    SDL_Rect dest_rect = {x, y, surface->w, surface->h}; // Position et dimensions du texte
+    SDL_Rect dest_rect = {x, y, surface->w, surface->h};
     SDL_RenderCopy(renderer, texture, NULL, &dest_rect);
 
     SDL_FreeSurface(surface);
@@ -33,23 +33,12 @@ void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option,
     SDL_Color yellow = {255, 255, 0, 255};
 
     for (int i = 0; i < num_options; i++) {
-        SDL_Color color = (i == selected_option) ? yellow : white; // Option sélectionnée en jaune
+        SDL_Color color = (i == selected_option) ? yellow : white;
         render_text(renderer, font, options[i], color, 350, y_start + i * 100);
     }
 }
 
-void handle_balance_update(int option) {
-    if (option == 0) {  // Ajouter de l'argent
-        balance += 5;
-    } else if (option == 1) {  // Retirer de l'argent
-        if (balance >= 5) {
-            balance -= 5;
-        } else {
-            printf("Solde insuffisant pour retirer de l'argent\n");
-        }
-    }
-}
-
+// Fonction pour afficher le solde
 void render_balance(SDL_Renderer *renderer, TTF_Font *font) {
     char balance_text[50];
     sprintf(balance_text, "Solde: %d", balance);
@@ -59,7 +48,7 @@ void render_balance(SDL_Renderer *renderer, TTF_Font *font) {
 
 int main(int argc, char *argv[]) {
     // Initialisation des bibliothèques SDL
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) { // Ne pas initialiser SDL_AUDIO
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         printf("Erreur SDL: %s\n", SDL_GetError());
         return 1;
     }
@@ -122,7 +111,6 @@ int main(int argc, char *argv[]) {
     SDL_Texture *image_texture = SDL_CreateTextureFromSurface(renderer, image_surface);
     SDL_FreeSurface(image_surface);
 
-    // Couleur du texte
     SDL_Color yellow = {255, 255, 0, 255};
 
     int running = 1, on_menu = 0, selected_option = 0, on_submenu = -1;
@@ -134,72 +122,53 @@ int main(int argc, char *argv[]) {
             if (event.type == SDL_QUIT) {
                 running = 0;
             } else if (event.type == SDL_KEYDOWN) {
-                if (on_menu) { // Navigation dans le menu principal ou sous-menus
+                if (!on_menu) { // Navigation dans le menu principal
+                    if (event.key.keysym.sym == SDLK_RETURN) {
+                        on_menu = 1;
+                    }
+                } else if (on_menu && on_submenu == -1) { // Menu principal
                     if (event.key.keysym.sym == SDLK_UP) {
                         submenu_selected = (submenu_selected - 1 + 3) % 3;
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         submenu_selected = (submenu_selected + 1) % 3;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
-                        if (submenu_selected == 0) { // Solde
-                            on_submenu = 0;
-                        } else if (submenu_selected == 1) { // Quitter
-                            running = 0; // Quitter le jeu
-                        } else if (submenu_selected == 2) { // Jeux
-                            on_submenu = 1;
+                        if (submenu_selected == 0) {
+                            on_submenu = 0; // Sous-menu Solde
+                        } else if (submenu_selected == 1) {
+                            running = 0; // Quitter
+                        } else if (submenu_selected == 2) {
+                            on_submenu = 1; // Sous-menu Jeux
                         }
                     }
                 } else if (on_submenu == 0) { // Sous-menu Solde
-                    if (event.key.keysym.sym == SDLK_RETURN) {
-                        if (submenu_selected == 0) { // Ajouter de l'argent
-                            balance += 5;  // Ajouter 5 au solde
-                        } else if (submenu_selected == 1) { // Retirer de l'argent
+                    if (event.key.keysym.sym == SDLK_UP) {
+                        submenu_selected = (submenu_selected - 1 + 3) % 3;
+                    } else if (event.key.keysym.sym == SDLK_DOWN) {
+                        submenu_selected = (submenu_selected + 1) % 3;
+                    } else if (event.key.keysym.sym == SDLK_RETURN) {
+                        if (submenu_selected == 0) {
+                            balance += 5; // Ajouter de l'argent
+                        } else if (submenu_selected == 1) {
                             if (balance >= 5) {
-                                balance -= 5; // Retirer 5 du solde
-                            } else {
-                                printf("Solde insuffisant\n");
+                                balance -= 5; // Retirer de l'argent
                             }
-                        } else if (submenu_selected == 2) { // Retour au menu
-                            on_submenu = -1; // Retour au menu principal
+                        } else if (submenu_selected == 2) {
+                            on_submenu = -1; // Retour
                         }
                     }
                 } else if (on_submenu == 1) { // Sous-menu Jeux
-                    if (event.key.keysym.sym == SDLK_RETURN) {
-                        if (submenu_selected == 2) { // Retour au menu principal
-                            on_submenu = -1; // Retour au menu principal
+                    if (event.key.keysym.sym == SDLK_UP) {
+                        submenu_selected = (submenu_selected - 1 + 3) % 3;
+                    } else if (event.key.keysym.sym == SDLK_DOWN) {
+                        submenu_selected = (submenu_selected + 1) % 3;
+                    } else if (event.key.keysym.sym == SDLK_RETURN) {
+                        if (submenu_selected == 0) {
+                            system("./roulette"); // Lancer Roulette
+                        } else if (submenu_selected == 1) {
+                            system("./surf"); // Lancer Surf
+                        } else if (submenu_selected == 2) {
+                            on_submenu = -1; // Retour
                         }
-                    }
-                }
-            } else if (event.type == SDL_MOUSEBUTTONDOWN) {
-                int x = event.button.x, y = event.button.y;
-
-                // Vérification des clics dans le menu principal (Play Now)
-                if (!on_menu) {
-                    SDL_Rect play_rect = {300, 400, 200, 80};
-                    if (x >= play_rect.x && x <= play_rect.x + play_rect.w && y >= play_rect.y && y <= play_rect.y + play_rect.h) {
-                        on_menu = 1;
-                    }
-                }
-
-                // Vérification des clics dans le sous-menu Solde
-                if (on_submenu == 0) {
-                    // Ajouter de l'argent
-                    SDL_Rect add_rect = {300, 200, 200, 80};
-                    if (x >= add_rect.x && x <= add_rect.x + add_rect.w && y >= add_rect.y && y <= add_rect.y + add_rect.h) {
-                        balance += 5; // Ajouter 5 à l'argent
-                    }
-
-                    // Retirer de l'argent
-                    SDL_Rect remove_rect = {300, 300, 200, 80};
-                    if (x >= remove_rect.x && x <= remove_rect.x + remove_rect.w && y >= remove_rect.y && y <= remove_rect.y + remove_rect.h) {
-                        if (balance >= 5) {
-                            balance -= 5; // Retirer 5 de l'argent
-                        }
-                    }
-
-                    // Retour
-                    SDL_Rect back_rect = {300, 400, 200, 80};
-                    if (x >= back_rect.x && x <= back_rect.x + back_rect.w && y >= back_rect.y && y <= back_rect.y + back_rect.h) {
-                        on_submenu = -1; // Retour au menu principal
                     }
                 }
             }
@@ -214,7 +183,7 @@ int main(int argc, char *argv[]) {
             } else if (on_submenu == 0) {
                 const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"};
                 render_submenu(renderer, font, submenu_selected, solde_options, 3, 200);
-                render_balance(renderer, font); // Afficher le solde actuel
+                render_balance(renderer, font);
             } else if (on_submenu == 1) {
                 const char *jeux_options[] = {"Roulette", "Surf", "Retour"};
                 render_submenu(renderer, font, submenu_selected, jeux_options, 3, 200);
