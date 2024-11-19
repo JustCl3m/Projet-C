@@ -1,9 +1,10 @@
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <math.h>
 
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
+#define GRID_SIZE 10
 #define CELL_SIZE 40
 #define FPS 60
 #define DELAY_TIME (1000 / FPS) // Temps entre chaque image en millisecondes
@@ -18,32 +19,22 @@ typedef struct {
     int tokenCount; // Nombre de jetons actuellement empilés
 } Cell;
 
-// Fonction pour charger une texture
-SDL_Texture* load_texture(const char* filepath, SDL_Renderer* renderer) {
-    SDL_Texture* texture = IMG_LoadTexture(renderer, filepath);
-    if (!texture) {
-        printf("Unable to load image %s! SDL_image Error: %s\n", filepath, IMG_GetError());
-    }
-    return texture;
-}
-
-// Fonction pour dessiner la grille
-void draw_grid(SDL_Renderer* renderer, SDL_Texture* backgroundTexture, Cell** grid, int rows, int cols, int selectedX, int selectedY) {
-    // Afficher l'image de fond
-    SDL_RenderCopy(renderer, backgroundTexture, NULL, NULL);
-
+void draw_grid(SDL_Renderer* renderer, Cell grid[GRID_SIZE][GRID_SIZE], int selectedX, int selectedY) {
     // Dessiner les cases
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            // Dessiner les bordures des cases uniquement (sans remplir la case)
+    for (int i = 0; i < GRID_SIZE; i++) {
+        for (int j = 0; j < GRID_SIZE; j++) {
+            // Dessiner la case
             if (grid[i][j].selected) {
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  // Bordure rouge pour la case sélectionnée
+                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  // Couleur rouge pour la case sélectionnée
             } else {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Bordure noire pour les autres cases
+                SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);  // Couleur grise pour les autres
             }
 
             SDL_Rect cellRect = {i * CELL_SIZE, j * CELL_SIZE, CELL_SIZE, CELL_SIZE};
-            SDL_RenderDrawRect(renderer, &cellRect); // Bordure des cases
+            SDL_RenderFillRect(renderer, &cellRect);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);  // Bordure noire
+
+            SDL_RenderDrawRect(renderer, &cellRect);
 
             // Dessiner les jetons sous forme de cercle
             if (grid[i][j].tokenCount > 0) {
@@ -78,32 +69,9 @@ int main() {
         return 1;
     }
 
-    // Initialiser SDL_image
-    if (IMG_Init(IMG_INIT_PNG) == 0) {
-        printf("IMG_Init Error: %s\n", IMG_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    // Récupérer la résolution de l'écran
-    SDL_DisplayMode displayMode;
-    if (SDL_GetDesktopDisplayMode(0, &displayMode) != 0) {
-        printf("SDL_GetDesktopDisplayMode Error: %s\n", SDL_GetError());
-        SDL_Quit();
-        return 1;
-    }
-
-    int screenWidth = displayMode.w;
-    int screenHeight = displayMode.h;
-
-    // Calculer le nombre de lignes et de colonnes basés sur la résolution
-    int cols = screenWidth / CELL_SIZE;  // Nombre de colonnes
-    int rows = screenHeight / CELL_SIZE; // Nombre de lignes
-
-    // Créer la fenêtre avec les dimensions calculées
-    SDL_Window* window = SDL_CreateWindow("Grille avec Jetons et Fond",
+    SDL_Window* window = SDL_CreateWindow("Grille avec Jetons en Cercle",
                                           SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                          screenWidth, screenHeight, SDL_WINDOW_SHOWN);
+                                          SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
         SDL_Quit();
@@ -118,30 +86,8 @@ int main() {
         return 1;
     }
 
-    // Charger le fond d'écran
-    SDL_Texture* backgroundTexture = load_texture("tapis-roulette.png", renderer);
-    if (!backgroundTexture) {
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
     // Initialisation de la grille
-    Cell** grid = (Cell**)malloc(rows * sizeof(Cell*));
-    for (int i = 0; i < rows; i++) {
-        grid[i] = (Cell*)malloc(cols * sizeof(Cell));
-    }
-
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            grid[i][j].x = i;
-            grid[i][j].y = j;
-            grid[i][j].selected = 0;
-            grid[i][j].tokenCount = 0;
-        }
-    }
-
+    Cell grid[GRID_SIZE][GRID_SIZE] = {0}; // Toutes les cases sont non sélectionnées et sans jetons
     int selectedX = 0, selectedY = 0;
 
     // Boucle principale
@@ -164,13 +110,13 @@ int main() {
                         if (selectedY > 0) selectedY--;
                         break;
                     case SDLK_DOWN:
-                        if (selectedY < rows - 1) selectedY++;
+                        if (selectedY < GRID_SIZE - 1) selectedY++;
                         break;
                     case SDLK_LEFT:
                         if (selectedX > 0) selectedX--;
                         break;
                     case SDLK_RIGHT:
-                        if (selectedX < cols - 1) selectedX++;
+                        if (selectedX < GRID_SIZE - 1) selectedX++;
                         break;
                     case SDLK_RETURN: // Touche Entrée
                         // Placer un jeton (cercle noir) dans la case sélectionnée
@@ -189,18 +135,18 @@ int main() {
         }
 
         // Mise à jour de la grille en fonction de la sélection
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
                 grid[i][j].selected = 0; // Désélectionner toutes les cases
             }
         }
         grid[selectedX][selectedY].selected = 1; // Sélectionner la case actuelle
 
         // Rendu
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);  // Fond blanc (ne sera pas utilisé ici)
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);  // Fond blanc
         SDL_RenderClear(renderer);
 
-        draw_grid(renderer, backgroundTexture, grid, rows, cols, selectedX, selectedY);
+        draw_grid(renderer, grid, selectedX, selectedY);
 
         SDL_RenderPresent(renderer);
 
@@ -212,15 +158,8 @@ int main() {
     }
 
     // Libération des ressources
-    for (int i = 0; i < rows; i++) {
-        free(grid[i]);
-    }
-    free(grid);
-
-    SDL_DestroyTexture(backgroundTexture); // Libérer la texture du fond
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
-    IMG_Quit();
     SDL_Quit();
 
     return 0;
