@@ -556,6 +556,10 @@ int main() {
     int selected_row = 1;
     int selected_col = 1;
 
+
+    int is_betting_allowed = 0;  // Initialement, le joueur ne peut pas miser
+    int is_betting_locked = 0;  // Une fois verrouillé, les mises ne sont plus possibles
+
     SDL_Event e;
     int quit = 0;
     
@@ -564,6 +568,28 @@ int main() {
         if (e.type == SDL_QUIT) {
             quit = 1;
         }
+
+        if (e.type == SDL_KEYDOWN) {
+            if (e.key.keysym.sym == SDLK_p) {
+                if (!is_betting_locked) {
+                    is_betting_allowed = 1;  // Activer la possibilité de miser
+                    printf("Les paris sont maintenant ouverts.\n");
+                }
+            } else if (e.key.keysym.sym == SDLK_v) {
+                if (is_betting_allowed) {
+                    is_betting_locked = 1;  // Verrouiller les paris
+                    printf("Les paris sont maintenant fermés.\n");
+                }
+            }
+        }
+
+
+        if (!is_betting_allowed) {
+            printf("Appuyez sur 'P' pour ouvrir les paris.\n");
+        }
+
+
+        if (is_betting_allowed && !is_betting_locked) {
 
         // Exemple de gestion de l'entrée utilisateur pour le curseur
         if (e.type == SDL_KEYDOWN) {
@@ -659,34 +685,21 @@ int main() {
                     printf("Removed bet from (%d, %d). Remaining bets: %d\n", selected_row, selected_col, bets[selected_row][selected_col]);
                 }
         }
-        
-                int confirme = 0;
-
-                if (e.key.keysym.sym == SDLK_c) {
-                    confirme = 1; // Confirme la mise
-                        // Confirmation de la mise
-                    printf("Mise confirmée ");
-                
- 
-                }
             }
-    
 
+        
 
+          }
 
 
         }
 
 
-
-
-
-
-        pari[0][1] = (Mise) {bets[0+1][0], 1, 'R'};
-        pari[0][2] = (Mise) {bets[0+1][1], 2, 'N'};
-        pari[0][3] = (Mise) {bets[0+1][2], 3, 'R'};
-        pari[1][1] = (Mise) {bets[1+1][1], 4, 'N'};
-        pari[2][1] = (Mise) {bets[2+1][1], 5, 'R'};
+        pari[0][1] = (Mise) {bets[0][0], 1, 'R'};
+        pari[0][2] = (Mise) {bets[0][1], 2, 'N'};
+        pari[0][3] = (Mise) {bets[0][2], 3, 'R'};
+        pari[1][1] = (Mise) {bets[1][1], 4, 'N'};
+        pari[2][1] = (Mise) {bets[2][1], 5, 'R'};
         pari[3][1] = (Mise) {bets[3][1], 6, 'N'};
         pari[1][2] = (Mise) {bets[1][2], 7, 'R'};
         pari[2][2] = (Mise) {bets[2][2], 8, 'N'};
@@ -719,15 +732,21 @@ int main() {
         pari[2][11] = (Mise) {bets[2][11], 35, 'N'};
         pari[3][11] = (Mise) {bets[3][11], 36, 'R'};
 
-         for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 3; j++) {
-            printf("pari[%d][%d] = {montant: %d, numero: %d, couleur: %c}\n",
-                   i, j, pari[i][j].montant, pari[i][j].numero, pari[i][j].couleur);
+        // Définir le résultat de la roulette (par exemple, 17)
+        const int resultat = 17;
 
+
+    if (is_betting_locked) {
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 12; j++) {
+            // Vérifier si le numéro correspond au résultat et si le montant est positif
+            if (pari[i][j].numero == resultat && pari[i][j].montant > 0) {
+                printf("Gagnant! pari[%d][%d] correspond au résultat %d avec un montant de %d\n", i, j, resultat, pari[i][j].montant);
+            }
+            }
         }
-         }
-        //printf("Mise à [%d,%d]: Montant = %d, Couleur = %c, Numéro = %d\n", N, M, pari[2][1].montant, pari[2][1].couleur, pari[2][1].numero);
-    //printf("Mise à [%d,%d]: Montant = %d, Couleur = %c, Numéro = %d\n", , , pari[3][1].montant, pari[3][1].couleur, pari[3][1].numero);
+    }
 
         
 
