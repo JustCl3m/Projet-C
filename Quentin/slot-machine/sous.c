@@ -1,5 +1,3 @@
-// gcc sous.c -o sous -lSDL2 -lSDL2_image -lSDL2_ttf -lm
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>  // Inclure la bibliothèque SDL_ttf
@@ -34,6 +32,7 @@ void renderImage(SDL_Renderer *renderer, Image img, int x, int y, int width, int
 void cleanUp(SDL_Window *window, SDL_Renderer *renderer, TTF_Font *font, Image *background, Image *symbols, int numSymbols);
 void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y, SDL_Color color);
 void updateBalance(int *balance, int *slots);
+int checkButtonClick(int x, int y, int w, int h, int mouseX, int mouseY);
 
 // Fonction principale
 int main() {
@@ -66,16 +65,25 @@ int main() {
 
     while (running) {
         SDL_Event e;
+        int mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY); // Récupérer la position de la souris
+
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
                 running = 0;
             }
-            // Ajouter un événement pour démarrer le tirage (par exemple, un clic de souris)
+
+            // Clic sur le bouton "Play"
             if (e.type == SDL_MOUSEBUTTONDOWN && !spinning) {
-                if (balance > 0) {  // Assurez-vous qu'il y a de l'argent
+                if (checkButtonClick(20, 150, 200, 50, mouseX, mouseY) && balance > 0) {
                     spinning = 1;
                     spinStartTime = SDL_GetTicks(); // Enregistrer le temps de départ du tirage
-                    balance-=100;  // Déduire 1 unité de la balance pour jouer
+                    balance -= 100;  // Déduire 1 unité de la balance pour jouer
+                }
+
+                // Clic sur le bouton "Quitter"
+                if (e.type == SDL_MOUSEBUTTONDOWN && checkButtonClick(20, WINDOW_HEIGHT - 100, 200, 50, mouseX, mouseY)) {
+                    running = 0;
                 }
             }
         }
@@ -98,7 +106,7 @@ int main() {
                 if (elapsedTime % 100 < 50) {  // Contrôler la vitesse du défilement (ex: tous les 100ms)
                     for (int i = 0; i < NUM_SLOTS; i++) {
                         // Définir une probabilité plus élevée de gagner avec des symboles spécifiques
-                        if (rand() % 100 < 50) {  // 20% de chance d'obtenir un symbole gagnant
+                        if (rand() % 100 < 50) {  // 50% de chance d'obtenir un symbole gagnant
                             slots[i] = 0;  // Choisir un symbole gagnant (par exemple, 0)
                         } else {
                             slots[i] = rand() % NUM_SYMBOLS;  // Sinon, choisir un symbole aléatoire
@@ -126,6 +134,11 @@ int main() {
         char balanceText[64];
         snprintf(balanceText, sizeof(balanceText), "Solde: %d", balance);
         renderText(renderer, font, balanceText, 20, 20, whiteColor);  // Affichage du solde
+
+        // Affichage des boutons
+        SDL_Color buttonColor = {0, 0, 255, 255};  // Couleur bleue pour les boutons
+        renderText(renderer, font, "Play", 20, 150, buttonColor); // Afficher "Play"
+        renderText(renderer, font, "Quitter", 20, WINDOW_HEIGHT - 100, buttonColor); // Afficher "Quitter"
 
         // Mettre à jour l'écran
         SDL_RenderPresent(renderer);
@@ -207,11 +220,16 @@ void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x,
     SDL_DestroyTexture(texture);
 }
 
+// Fonction pour vérifier si un clic est dans une zone de bouton
+int checkButtonClick(int x, int y, int w, int h, int mouseX, int mouseY) {
+    return (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h);
+}
+
 // Fonction pour mettre à jour le solde
 void updateBalance(int *balance, int *slots) {
     // Par exemple, si tous les symboles sont les mêmes (gagnant), on double le solde
     if (slots[0] == slots[1] && slots[1] == slots[2]) {
-        *balance += 50;  // Gain de 10 unités si le joueur gagne
+        *balance += 50;  // Gain de 50 unités si le joueur gagne
     }
 }
 
