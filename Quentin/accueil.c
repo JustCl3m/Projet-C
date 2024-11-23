@@ -28,10 +28,17 @@ void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_C
 }
 
 // Fonction pour afficher les options d'un sous-menu
-void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start) {
+void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start, SDL_Texture *background_texture) {
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color yellow = {255, 255, 0, 255};
 
+    // Dessiner l'image de fond (si spécifiée)
+    if (background_texture) {
+        SDL_Rect bg_rect = {0, 0, 800, 600}; // L'image couvre toute la fenêtre
+        SDL_RenderCopy(renderer, background_texture, NULL, &bg_rect);
+    }
+
+    // Afficher les options
     for (int i = 0; i < num_options; i++) {
         SDL_Color color = (i == selected_option) ? yellow : white; // Option sélectionnée en jaune
         render_text(renderer, font, options[i], color, 350, y_start + i * 100);
@@ -77,7 +84,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SDL_Window *window = SDL_CreateWindow("Accueil", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("Accueil", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE);
     if (!window) {
         printf("Erreur création fenêtre: %s\n", SDL_GetError());
         IMG_Quit();
@@ -107,8 +114,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SDL_Surface *image_surface = IMG_Load("image1.jpe");
-    if (!image_surface) {
+    // Charger l'image du menu principal
+    SDL_Surface *menu_surface = IMG_Load("Plan_de_travail_1.png");
+    if (!menu_surface) {
         printf("Erreur chargement image: %s\n", IMG_GetError());
         TTF_CloseFont(font);
         SDL_DestroyRenderer(renderer);
@@ -119,8 +127,24 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SDL_Texture *image_texture = SDL_CreateTextureFromSurface(renderer, image_surface);
-    SDL_FreeSurface(image_surface);
+    SDL_Texture *menu_texture = SDL_CreateTextureFromSurface(renderer, menu_surface);
+    SDL_FreeSurface(menu_surface);
+
+    // Charger l'image de fond pour le sous-menu Solde
+    SDL_Surface *banque_surface = IMG_Load("banque.png");
+    if (!banque_surface) {
+        printf("Erreur chargement de l'image banque.png: %s\n", IMG_GetError());
+        TTF_CloseFont(font);
+        SDL_DestroyTexture(menu_texture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    SDL_Texture *banque_texture = SDL_CreateTextureFromSurface(renderer, banque_surface);
+    SDL_FreeSurface(banque_surface);
 
     // Couleur du texte
     SDL_Color yellow = {255, 255, 0, 255};
@@ -140,6 +164,7 @@ int main(int argc, char *argv[]) {
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         submenu_selected = (submenu_selected + 1) % 3;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
+<<<<<<< HEAD
                         if (submenu_selected == 0) { // Solde
                             on_submenu = 0;
                         } else if (submenu_selected == 1) { // Quitter
@@ -153,6 +178,26 @@ int main(int argc, char *argv[]) {
                         if (submenu_selected == 0) { // Ajouter de l'argent
                             balance += 5;  // Ajouter 5 au solde
                         } else if (submenu_selected == 1) { // Retirer de l'argent
+=======
+                        if (submenu_selected == 0) {
+                            on_submenu = 0; // Sous-menu Solde
+                        } else if (submenu_selected == 2) {
+                            running = 0; // Quitter
+                        } else if (submenu_selected == 1) {
+                            on_submenu = 1; // Sous-menu Jeux
+                        }
+                    }
+                } else if (on_submenu == 0) { // Sous-menu Solde
+                    const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"}; // Sous-menu Solde
+                    if (event.key.keysym.sym == SDLK_UP) {
+                        submenu_selected = (submenu_selected - 1 + 3) % 3;
+                    } else if (event.key.keysym.sym == SDLK_DOWN) {
+                        submenu_selected = (submenu_selected + 1) % 3;
+                    } else if (event.key.keysym.sym == SDLK_RETURN) {
+                        if (submenu_selected == 0) {
+                            balance += 5; // Ajouter de l'argent
+                        } else if (submenu_selected == 1) {
+>>>>>>> 8f3cba6 (grrggrgs)
                             if (balance >= 5) {
                                 balance -= 5; // Retirer 5 du solde
                             } else {
@@ -163,9 +208,24 @@ int main(int argc, char *argv[]) {
                         }
                     }
                 } else if (on_submenu == 1) { // Sous-menu Jeux
+<<<<<<< HEAD
                     if (event.key.keysym.sym == SDLK_RETURN) {
                         if (submenu_selected == 2) { // Retour au menu principal
                             on_submenu = -1; // Retour au menu principal
+=======
+                    const char *jeu_options[] = {"Roulette", "Surf", "Retour"}; // Sous-menu Jeux
+                    if (event.key.keysym.sym == SDLK_UP) {
+                        submenu_selected = (submenu_selected - 1 + 3) % 3;
+                    } else if (event.key.keysym.sym == SDLK_DOWN) {
+                        submenu_selected = (submenu_selected + 1) % 3;
+                    } else if (event.key.keysym.sym == SDLK_RETURN) {
+                        if (submenu_selected == 0) {
+                            system("./roulette"); // Lancer Roulette
+                        } else if (submenu_selected == 1) {
+                            system("./surf"); // Lancer Surf
+                        } else if (submenu_selected == 2) {
+                            on_submenu = -1; // Retour
+>>>>>>> 8f3cba6 (grrggrgs)
                         }
                     }
                 }
@@ -209,26 +269,33 @@ int main(int argc, char *argv[]) {
 
         if (on_menu) {
             if (on_submenu == -1) {
-                const char *menu_options[] = {"Solde", "Quitter", "Jeux"};
-                render_submenu(renderer, font, submenu_selected, menu_options, 3, 200);
+                const char *menu_options[] = {"Solde", "Jeux", "Quitter"}; // Quitter en bas
+                render_submenu(renderer, font, submenu_selected, menu_options, 3, 200, NULL); // Menu principal
             } else if (on_submenu == 0) {
+<<<<<<< HEAD
                 const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"};
                 render_submenu(renderer, font, submenu_selected, solde_options, 3, 200);
                 render_balance(renderer, font); // Afficher le solde actuel
+=======
+                const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"}; // Sous-menu Solde
+                render_submenu(renderer, font, submenu_selected, solde_options, 3, 200, banque_texture);
+>>>>>>> 8f3cba6 (grrggrgs)
             } else if (on_submenu == 1) {
-                const char *jeux_options[] = {"Roulette", "Surf", "Retour"};
-                render_submenu(renderer, font, submenu_selected, jeux_options, 3, 200);
+                const char *jeu_options[] = {"Roulette", "Surf", "Retour"}; // Sous-menu Jeux
+                render_submenu(renderer, font, submenu_selected, jeu_options, 3, 200, NULL);
             }
         } else {
-            SDL_RenderCopy(renderer, image_texture, NULL, NULL);
-            SDL_Rect play_rect = {300, 400, 200, 80};
-            render_text(renderer, font, "Play Now", yellow, play_rect.x + 20, play_rect.y + 10);
+            SDL_RenderCopy(renderer, menu_texture, NULL, NULL);
+            render_text(renderer, font, "Appuyez sur Entrée", yellow, 200, 300);
         }
+
+        render_balance(renderer, font);
 
         SDL_RenderPresent(renderer);
     }
 
-    SDL_DestroyTexture(image_texture);
+    SDL_DestroyTexture(menu_texture);
+    SDL_DestroyTexture(banque_texture);
     TTF_CloseFont(font);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
