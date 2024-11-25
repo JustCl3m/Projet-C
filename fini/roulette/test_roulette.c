@@ -58,129 +58,145 @@ void renderText(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x,
 // Fonction pour dessiner une ligne représentant un angle
 void drawAngle(SDL_Renderer *renderer, int centerX, int centerY, float angle, int length, SDL_Color color);
 
-int main() {
-    SDL_Window *window = NULL;
-    SDL_Renderer *renderer = NULL;
 
-    if (!init(&window, &renderer)) {
-        printf("Erreur d'initialisation SDL\n");
-        return -1;
-    }
+void lancerRoulette() {
+        SDL_Window *window = NULL;
+        SDL_Renderer *renderer = NULL;
 
-    if (TTF_Init() == -1) {
-    printf("Erreur d'initialisation SDL_ttf: %s\n", TTF_GetError());
-    return 0;
-    }
+        if (!init(&window, &renderer)) {
+            printf("Erreur d'initialisation SDL\n");
+            return;
+        }
 
-    TTF_Font *font = TTF_OpenFont("Roboto-Regular.ttf", 24);  // Vous pouvez changer "arial.ttf" et la taille (ici 24)
-    if (!font) {
-    printf("Erreur de chargement de la police: %s\n", TTF_GetError());
-    return 0;
-    }
+        if (TTF_Init() == -1) {
+            printf("Erreur d'initialisation SDL_ttf: %s\n", TTF_GetError());
+            return;
+        }
 
+        TTF_Font *font = TTF_OpenFont("Roboto-Regular.ttf", 24);  // Vous pouvez changer "arial.ttf" et la taille (ici 24)
+        if (!font) {
+            printf("Erreur de chargement de la police: %s\n", TTF_GetError());
+            return;
+        }
 
-    Image roulette = loadImage("roulette.png", renderer);
-    Image ball = loadImage("ball.png", renderer);
-    if (roulette.texture == NULL || ball.texture == NULL) {
+        Image roulette = loadImage("roulette.png", renderer);
+        Image ball = loadImage("ball.png", renderer);
+        if (roulette.texture == NULL || ball.texture == NULL) {
+            cleanUp(window, renderer, &roulette, &ball, font);
+            return;
+        }
+
+        srand(time(NULL));
+
+        int running = 1, stopped = 0;
+        float ballAngle = 0, rouletteAngle = 0;
+        float ballSpeed = 3.0, rouletteSpeed = 5.0;
+        float deceleration = 0.02;
+        float ballRadius = BALL_RADIUS_MAX;
+
+        while (running) {
+            SDL_Event e;
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_QUIT) {
+                    running = 0;
+                }
+                if (e.type == SDL_MOUSEBUTTONDOWN && stopped) {
+                    stopped = 0;
+                    ballSpeed = 4.0 + (rand() % 10);
+                    rouletteSpeed = 5.0 + (rand() % 3);
+                    ballRadius = BALL_RADIUS_MAX;
+                }
+            }
+
+            fillRoulette();
+
+            // for (int i = -36; i <= 36; i++) {
+            //     printf("Index %d: %d\n", i, rouletteNumbers[i + NUM_CASES]);  // Décaler de +36 pour accéder à l'indice de -36 à +36
+            // }
+
+            SDL_RenderClear(renderer);
+
+            int rouletteX = (WINDOW_WIDTH - ROULETTE_WIDTH) / 2;
+            int rouletteY = (WINDOW_HEIGHT - ROULETTE_HEIGHT) / 2;
+
+            if (rouletteSpeed > 0) {
+                rouletteAngle -= rouletteSpeed;
+                rouletteSpeed -= 0.01;
+                if (rouletteSpeed < 0) rouletteSpeed = 0;
+            }
+
+            renderImage(renderer, roulette, rouletteX, rouletteY, ROULETTE_WIDTH, ROULETTE_HEIGHT, rouletteAngle);
+
+            if (!stopped) {
+                moveBallTowardsCenter(&ballAngle, &ballSpeed, &ballRadius, &deceleration, &stopped);
+            } else {
+                followRoulette(&ballAngle, rouletteSpeed);
+            }
+
+            // Calcul des coordonnées de la balle
+            int ballX = (int)(cos(ballAngle * M_PI / 180.0) * ballRadius);
+            int ballY = (int)(sin(ballAngle * M_PI / 180.0) * ballRadius);
+            int screenBallX = WINDOW_WIDTH / 2 + ballX - BALL_WIDTH / 2;
+            int screenBallY = WINDOW_HEIGHT / 2 + ballY - BALL_HEIGHT / 2;
+
+            // Dessiner les angles graphiquement
+            int centerX = WINDOW_WIDTH / 2;
+            int centerY = WINDOW_HEIGHT / 2;
+
+            // Affichage des informations dans la console
+            int rouletteAngledegree = ((int)(rouletteAngle) % 360);
+            int ballAngledegree = (((int)(ballAngle)) % 360);
+
+            //printf("Roulette Angle: %.2d°, Ball Angle: %.2d°\n", rouletteAngledegree, ballAngledegree);
+
+            // Calcul de la section de la roulette (ajustée)
+            int section = round((int)(rouletteAngledegree - ballAngledegree) / 9.72972973);
+            //printf("Section: %d\n", section);
+
+            int caseNum = rouletteNumbers[(9 - section)];
+           // printf("Case: %d\n", caseNum);
+
+            char numberText[100];
+            sprintf(numberText, "La case est :%d", caseNum);  // Exemple de numéro
+            renderText(renderer, font, numberText, 500, 0);  // Affiche le texte au centre de l'écran
+
+            SDL_Color ballColor = {255, 0, 0, 255}; // Rouge pour la balle
+            drawAngle(renderer, centerX, centerY, ballAngledegree, ROULETTE_RADIUS, ballColor);
+
+            SDL_Color rouletteColor = {0, 255, 0, 255}; // Vert pour un angle fixe (exemple)
+            drawAngle(renderer, centerX, centerY, 0, ROULETTE_RADIUS, rouletteColor);
+
+            SDL_Color rouletteAxisColor = {0, 0, 255, 255}; // Bleu pour l'axe de la roulette
+            drawAngle(renderer, centerX, centerY, rouletteAngle, ROULETTE_RADIUS, rouletteAxisColor);
+
+            renderImage(renderer, ball, screenBallX, screenBallY, BALL_WIDTH, BALL_HEIGHT, 0);
+
+            SDL_RenderPresent(renderer);
+            SDL_Delay(16);
+        }
+
         cleanUp(window, renderer, &roulette, &ball, font);
-        return -1;
     }
 
-    srand(time(NULL));
-
-    int running = 1, stopped = 0;
-    float ballAngle = 0, rouletteAngle = 0;
-    float ballSpeed = 3.0, rouletteSpeed = 5.0;
-    float deceleration = 0.02;
-    float ballRadius = BALL_RADIUS_MAX;
-
-    while (running) {
-        SDL_Event e;
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                running = 0;
-            }
-            if (e.type == SDL_MOUSEBUTTONDOWN && stopped) {
-                stopped = 0;
-                ballSpeed = 4.0 + (rand() % 10);
-                rouletteSpeed = 5.0 + (rand() % 3);
-                ballRadius = BALL_RADIUS_MAX;
-            }
-        }
 
 
-        fillRoulette();
-
-        for (int i = -36; i <= 36; i++) {
-        printf("Index %d: %d\n", i, rouletteNumbers[i + NUM_CASES]);  // Décaler de +36 pour accéder à l'indice de -36 à +36
-    }
-        
-        SDL_RenderClear(renderer);
-
-        int rouletteX = (WINDOW_WIDTH - ROULETTE_WIDTH) / 2;
-        int rouletteY = (WINDOW_HEIGHT - ROULETTE_HEIGHT) / 2;
-
-        if (rouletteSpeed > 0) {
-            rouletteAngle -= rouletteSpeed;
-            rouletteSpeed -= 0.01;
-            if (rouletteSpeed < 0) rouletteSpeed = 0;
-        }
-
-        renderImage(renderer, roulette, rouletteX, rouletteY, ROULETTE_WIDTH, ROULETTE_HEIGHT, rouletteAngle);
-
-        if (!stopped) {
-            moveBallTowardsCenter(&ballAngle, &ballSpeed, &ballRadius, &deceleration, &stopped);
-        } else {
-            followRoulette(&ballAngle, rouletteSpeed);
-        }
-
-        // Calcul des coordonnées de la balle
-        int ballX = (int)(cos(ballAngle * M_PI / 180.0) * ballRadius);
-        int ballY = (int)(sin(ballAngle * M_PI / 180.0) * ballRadius);
-        int screenBallX = WINDOW_WIDTH / 2 + ballX - BALL_WIDTH / 2;
-        int screenBallY = WINDOW_HEIGHT / 2 + ballY - BALL_HEIGHT / 2;
-
-        // Dessiner les angles graphiquement
-        int centerX = WINDOW_WIDTH / 2;
-        int centerY = WINDOW_HEIGHT / 2;
-
-        // Affichage des informations dans la console
-        int rouletteAngledegree = ((int)(rouletteAngle) % 360);
-        int ballAngledegree = (((int)(ballAngle)) % 360);
-
-        printf("Roulette Angle: %.2d°, Ball Angle: %.2d°\n", rouletteAngledegree, ballAngledegree);
-
-        // Calcul de la section de la roulette (ajustée)
-        int section = round((int)(rouletteAngledegree-ballAngledegree) / 9.72972973);
-        printf("Section: %d\n", section);
-
-        int caseNum = rouletteNumbers[(9-section)];
-        printf("Case: %d\n", caseNum);
-    
-        char numberText[100];
-        sprintf(numberText, "La case est :%d", caseNum);  // Exemple de numéro
-        renderText(renderer, font, numberText, 500, 0);  // Affiche le texte au centre de l'écran
-
-
-
-        SDL_Color ballColor = {255, 0, 0, 255}; // Rouge pour la balle
-        drawAngle(renderer, centerX, centerY, ballAngledegree, ROULETTE_RADIUS, ballColor);
-
-        SDL_Color rouletteColor = {0, 255, 0, 255}; // Vert pour un angle fixe (exemple)
-        drawAngle(renderer, centerX, centerY, 0, ROULETTE_RADIUS, rouletteColor);
-
-        SDL_Color rouletteAxisColor = {0, 0, 255, 255}; // Bleu pour l'axe de la roulette
-        drawAngle(renderer, centerX, centerY, rouletteAngle, ROULETTE_RADIUS, rouletteAxisColor);
-
-        renderImage(renderer, ball, screenBallX, screenBallY, BALL_WIDTH, BALL_HEIGHT, 0);
-
-        SDL_RenderPresent(renderer);
-        SDL_Delay(16);
+// Fonction pour charger une image et la convertir en texture SDL
+Image loadImage(const char *path, SDL_Renderer *renderer) {
+    Image img;
+    SDL_Surface *surface = IMG_Load(path);
+    if (!surface) {
+        printf("Erreur de chargement de l'image %s: %s\n", path, SDL_GetError());
+        img.texture = NULL;
+        return img;
     }
 
-    cleanUp(window, renderer, &roulette, &ball, font);
-    return 0;
+    img.texture = SDL_CreateTextureFromSurface(renderer, surface);
+    img.width = surface->w;
+    img.height = surface->h;
+    SDL_FreeSurface(surface);
+    return img;
 }
+
 
 // Fonction pour initialiser la fenêtre et le renderer
 int init(SDL_Window **window, SDL_Renderer **renderer) {
@@ -201,25 +217,8 @@ int init(SDL_Window **window, SDL_Renderer **renderer) {
         return 0;
     }
 
-    return 1;
 }
 
-// Fonction pour charger une image et la convertir en texture SDL
-Image loadImage(const char *path, SDL_Renderer *renderer) {
-    Image img;
-    SDL_Surface *surface = IMG_Load(path);
-    if (!surface) {
-        printf("Erreur de chargement de l'image %s: %s\n", path, SDL_GetError());
-        img.texture = NULL;
-        return img;
-    }
-
-    img.texture = SDL_CreateTextureFromSurface(renderer, surface);
-    img.width = surface->w;
-    img.height = surface->h;
-    SDL_FreeSurface(surface);
-    return img;
-}
 
 // Fonction pour rendre une image à une position donnée
 void renderImage(SDL_Renderer *renderer, Image img, int x, int y, int width, int height, float angle) {

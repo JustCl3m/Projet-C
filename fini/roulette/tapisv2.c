@@ -465,16 +465,16 @@ void draw_chips(SDL_Renderer* renderer, SDL_Texture* chipTextures[], int x, int 
 
 
 // Fonction principale
-int main() {
+void tapis() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL_Init Error: %s\n", SDL_GetError());
-        return 1;
+        //return 1;
     }
 
     if (TTF_Init() == -1) {
         printf("SDL_ttf Error: %s\n", TTF_GetError());
         SDL_Quit();
-        return 1;
+        //return 1;
     }
 
     // Créer la fenêtre SDL
@@ -483,7 +483,7 @@ int main() {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
         TTF_Quit();
         SDL_Quit();
-        return 1;
+        //return 1;
     }
 
     // Créer le renderer SDL
@@ -493,7 +493,7 @@ int main() {
         SDL_DestroyWindow(window);
         TTF_Quit();
         SDL_Quit();
-        return 1;
+        //return 1;
     }
 
     // Charger la police de caractères
@@ -504,7 +504,7 @@ int main() {
         SDL_DestroyWindow(window);
         TTF_Quit();
         SDL_Quit();
-        return 1;
+        //return 1;
     }
 
 
@@ -522,7 +522,7 @@ int main() {
     if (!chipSurface_1 || !chipSurface_5 || !chipSurface_25 || !chipSurface_50 || !chipSurface_100) {
         printf("Erreur : Impossible de charger une ou plusieurs images de jetons.\n");
         printf("Détails de l'erreur : %s\n", SDL_GetError());
-        return -1; // Sortir si une image n'est pas chargée
+        //return -1; // Sortir si une image n'est pas chargée
     }
 
 
@@ -539,7 +539,7 @@ int main() {
     for (int i = 0; i < 5; i++) {
         if (!chipTextures[i]) {
             printf("Erreur : Impossible de créer la texture pour le jeton %d. SDL_Error: %s\n", i + 1, SDL_GetError());
-            return -1; // Sortir si une texture n'est pas créée
+            //return -1; // Sortir si une texture n'est pas créée
         }
     }
 
@@ -584,9 +584,6 @@ int main() {
         }
 
 
-        if (!is_betting_allowed) {
-            printf("Appuyez sur 'P' pour ouvrir les paris.\n");
-        }
 
 
         if (is_betting_allowed && !is_betting_locked) {
@@ -781,5 +778,4 @@ SDL_DestroyWindow(window);
 TTF_Quit();
 SDL_Quit();
 
-return 0;
 }
