@@ -3,6 +3,9 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
+
 int balance = 0;  // Variable pour stocker le solde d'argent
 
 // Fonction pour afficher du texte
@@ -35,7 +38,7 @@ void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option,
 
     // Dessiner l'image de fond (ajustée à 1920x1080)
     if (background_texture) {
-        SDL_Rect bg_rect = {0, 0, 1920, 1080};
+        SDL_Rect bg_rect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
         SDL_RenderCopy(renderer, background_texture, NULL, &bg_rect);
     }
 
@@ -75,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Création de la fenêtre avec résolution 1920x1080
-    SDL_Window *window = SDL_CreateWindow("Accueil", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080, SDL_WINDOW_SHOWN);
+    SDL_Window *window = SDL_CreateWindow("Accueil", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         printf("Erreur création fenêtre: %s\n", SDL_GetError());
         IMG_Quit();
@@ -207,9 +210,9 @@ int main(int argc, char *argv[]) {
                 render_balance(renderer, font);
             }
         } else {
-            SDL_Rect bg_rect = {0, 0, 1672, 941};
+            SDL_Rect bg_rect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
             SDL_RenderCopy(renderer, menu_texture, NULL, &bg_rect);
-            render_text(renderer, font, "Commencer", (SDL_Color){255, 255, 255, 255}, 740, 695);
+            render_text(renderer, font, "Commencer", (SDL_Color){255, 255, 255, 255}, (SCREEN_WIDTH/2)-90, SCREEN_HEIGHT-280);
         }
 
         SDL_RenderPresent(renderer);
