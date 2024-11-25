@@ -28,9 +28,10 @@ void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_C
 }
 
 // Fonction pour afficher les options d'un sous-menu
-void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start, SDL_Texture *background_texture) {
+void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start, SDL_Texture *background_texture, int is_solde_menu) {
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color yellow = {255, 255, 0, 255};
+    SDL_Color black = {0, 0, 0, 255}; // Ajout de la couleur noire
 
     // Dessiner l'image de fond (ajustée à 1920x1080)
     if (background_texture) {
@@ -40,7 +41,7 @@ void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option,
 
     // Afficher les options
     for (int i = 0; i < num_options; i++) {
-        SDL_Color color = (i == selected_option) ? yellow : white;
+        SDL_Color color = is_solde_menu ? black : (i == selected_option ? yellow : white);
         render_text(renderer, font, options[i], color, 800, y_start + i * 100);  // Centré horizontalement
     }
 }
@@ -49,8 +50,8 @@ void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option,
 void render_balance(SDL_Renderer *renderer, TTF_Font *font) {
     char balance_text[50];
     sprintf(balance_text, "Solde: %d", balance);
-    SDL_Color white = {255, 255, 255, 255};
-    render_text(renderer, font, balance_text, white, 850, 50);  // Centré horizontalement
+    SDL_Color black = {0, 0, 0, 255};
+    render_text(renderer, font, balance_text, black, 850, 310);  // Centré horizontalement
 }
 
 int main(int argc, char *argv[]) {
@@ -199,10 +200,10 @@ int main(int argc, char *argv[]) {
         if (on_menu) {
             if (on_submenu == -1) {
                 const char *menu_options[] = {"Solde", "Jeux", "Quitter"};
-                render_submenu(renderer, font, submenu_selected, menu_options, 3, 400, submenu_texture);
+                render_submenu(renderer, font, submenu_selected, menu_options, 3, 400, submenu_texture, 0); // Pas le menu "Solde"
             } else if (on_submenu == 0) {
                 const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"};
-                render_submenu(renderer, font, submenu_selected, solde_options, 3, 400, solde_texture);
+                render_submenu(renderer, font, submenu_selected, solde_options, 3, 400, solde_texture, 1); // Menu "Solde" activé
                 render_balance(renderer, font);
             }
         } else {

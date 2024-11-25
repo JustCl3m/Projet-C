@@ -28,20 +28,21 @@ void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_C
 }
 
 // Fonction pour afficher les options d'un sous-menu
-void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start, SDL_Texture *background_texture) {
+void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start, SDL_Texture *background_texture, int is_solde_menu) {
     SDL_Color white = {255, 255, 255, 255};
     SDL_Color yellow = {255, 255, 0, 255};
+    SDL_Color black = {0, 0, 0, 255}; // Ajout de la couleur noire
 
-    // Dessiner l'image de fond (si spécifiée)
+    // Dessiner l'image de fond (ajustée à 1920x1080)
     if (background_texture) {
-        SDL_Rect bg_rect = {0, 0, 800, 600}; // L'image couvre toute la fenêtre
+        SDL_Rect bg_rect = {0, 0, 1920, 1080};
         SDL_RenderCopy(renderer, background_texture, NULL, &bg_rect);
     }
 
     // Afficher les options
     for (int i = 0; i < num_options; i++) {
-        SDL_Color color = (i == selected_option) ? yellow : white;
-        render_text(renderer, font, options[i], color, 350, y_start + i * 100);
+        SDL_Color color = is_solde_menu ? black : (i == selected_option ? yellow : white);
+        render_text(renderer, font, options[i], color, 800, y_start + i * 100);  // Centré horizontalement
     }
 }
 
@@ -49,8 +50,8 @@ void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option,
 void render_balance(SDL_Renderer *renderer, TTF_Font *font) {
     char balance_text[50];
     sprintf(balance_text, "Solde: %d", balance);
-    SDL_Color white = {255, 255, 255, 255};
-    render_text(renderer, font, balance_text, white, 350, 50);
+    SDL_Color black = {0, 0, 0, 255};
+    render_text(renderer, font, balance_text, black, 850, 310);  // Centré horizontalement
 }
 
 int main(int argc, char *argv[]) {
@@ -73,7 +74,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    SDL_Window *window = SDL_CreateWindow("Accueil", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_RESIZABLE);
+    // Création de la fenêtre avec résolution 1920x1080
+    SDL_Window *window = SDL_CreateWindow("Accueil", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080, SDL_WINDOW_SHOWN);
     if (!window) {
         printf("Erreur création fenêtre: %s\n", SDL_GetError());
         IMG_Quit();
@@ -92,7 +94,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    TTF_Font *font = TTF_OpenFont("Roboto-Regular.ttf", 48);
+    TTF_Font *font = TTF_OpenFont("Roboto-Regular.ttf", 24);  // Taille augmentée pour meilleure lisibilité
     if (!font) {
         printf("Erreur chargement police: %s\n", TTF_GetError());
         SDL_DestroyRenderer(renderer);
@@ -103,10 +105,10 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Charger l'image du menu principal
+    // Charger les images (assurez-vous qu'elles soient en 1920x1080)
     SDL_Surface *menu_surface = IMG_Load("Plan_de_travail_1.png");
     if (!menu_surface) {
-        printf("Erreur chargement image: %s\n", IMG_GetError());
+        printf("Erreur chargement image Plan_de_travail_1.png: %s\n", IMG_GetError());
         TTF_CloseFont(font);
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -115,14 +117,12 @@ int main(int argc, char *argv[]) {
         SDL_Quit();
         return 1;
     }
-
     SDL_Texture *menu_texture = SDL_CreateTextureFromSurface(renderer, menu_surface);
     SDL_FreeSurface(menu_surface);
 
-    // Charger l'image de fond pour le sous-menu Solde
-    SDL_Surface *banque_surface = IMG_Load("banque.png");
-    if (!banque_surface) {
-        printf("Erreur chargement de l'image banque.png: %s\n", IMG_GetError());
+    SDL_Surface *submenu_surface = IMG_Load("sousmenu.png");
+    if (!submenu_surface) {
+        printf("Erreur chargement image sousmenu.png: %s\n", IMG_GetError());
         TTF_CloseFont(font);
         SDL_DestroyTexture(menu_texture);
         SDL_DestroyRenderer(renderer);
@@ -132,13 +132,27 @@ int main(int argc, char *argv[]) {
         SDL_Quit();
         return 1;
     }
-    SDL_Texture *banque_texture = SDL_CreateTextureFromSurface(renderer, banque_surface);
-    SDL_FreeSurface(banque_surface);
+    SDL_Texture *submenu_texture = SDL_CreateTextureFromSurface(renderer, submenu_surface);
+    SDL_FreeSurface(submenu_surface);
 
-    SDL_Color yellow = {255, 255, 0, 255};
+    SDL_Surface *solde_surface = IMG_Load("solde.png");
+    if (!solde_surface) {
+        printf("Erreur chargement image solde.png: %s\n", IMG_GetError());
+        TTF_CloseFont(font);
+        SDL_DestroyTexture(menu_texture);
+        SDL_DestroyTexture(submenu_texture);
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        TTF_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    SDL_Texture *solde_texture = SDL_CreateTextureFromSurface(renderer, solde_surface);
+    SDL_FreeSurface(solde_surface);
 
-    int running = 1, on_menu = 0, selected_option = 0, on_submenu = -1;
-    int submenu_selected = 0;
+    // Boucle principale
+    int running = 1, on_menu = 0, on_submenu = -1, submenu_selected = 0;
     SDL_Event event;
 
     while (running) {
@@ -146,54 +160,35 @@ int main(int argc, char *argv[]) {
             if (event.type == SDL_QUIT) {
                 running = 0;
             } else if (event.type == SDL_KEYDOWN) {
-                if (!on_menu) { // Navigation dans le menu principal
+                if (!on_menu) {
                     if (event.key.keysym.sym == SDLK_RETURN) {
                         on_menu = 1;
                     }
-                } else if (on_menu && on_submenu == -1) { // Menu principal
+                } else if (on_menu && on_submenu == -1) {
                     if (event.key.keysym.sym == SDLK_UP) {
                         submenu_selected = (submenu_selected - 1 + 3) % 3;
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         submenu_selected = (submenu_selected + 1) % 3;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
                         if (submenu_selected == 0) {
-                            on_submenu = 0; // Sous-menu Solde
+                            on_submenu = 0;
                         } else if (submenu_selected == 2) {
-                            running = 0; // Quitter
-                        } else if (submenu_selected == 1) {
-                            on_submenu = 1; // Sous-menu Jeux
+                            running = 0;
                         }
                     }
-                } else if (on_submenu == 0) { // Sous-menu Solde
-                    const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"}; // Sous-menu Solde
+                } else if (on_submenu == 0) {
+                    const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"};
                     if (event.key.keysym.sym == SDLK_UP) {
                         submenu_selected = (submenu_selected - 1 + 3) % 3;
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         submenu_selected = (submenu_selected + 1) % 3;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
                         if (submenu_selected == 0) {
-                            balance += 5; // Ajouter de l'argent
-                        } else if (submenu_selected == 1) {
-                            if (balance >= 5) {
-                                balance -= 5; // Retirer de l'argent
-                            }
+                            balance += 5;
+                        } else if (submenu_selected == 1 && balance >= 5) {
+                            balance -= 5;
                         } else if (submenu_selected == 2) {
-                            on_submenu = -1; // Retour
-                        }
-                    }
-                } else if (on_submenu == 1) { // Sous-menu Jeux
-                    const char *jeu_options[] = {"Roulette", "Surf", "Retour"}; // Sous-menu Jeux
-                    if (event.key.keysym.sym == SDLK_UP) {
-                        submenu_selected = (submenu_selected - 1 + 3) % 3;
-                    } else if (event.key.keysym.sym == SDLK_DOWN) {
-                        submenu_selected = (submenu_selected + 1) % 3;
-                    } else if (event.key.keysym.sym == SDLK_RETURN) {
-                        if (submenu_selected == 0) {
-                            system("./roulette"); // Lancer Roulette
-                        } else if (submenu_selected == 1) {
-                            system("./surf"); // Lancer Surf
-                        } else if (submenu_selected == 2) {
-                            on_submenu = -1; // Retour
+                            on_submenu = -1;
                         }
                     }
                 }
@@ -204,27 +199,25 @@ int main(int argc, char *argv[]) {
 
         if (on_menu) {
             if (on_submenu == -1) {
-                const char *menu_options[] = {"Solde", "Jeux", "Quitter"}; // Quitter en bas
-                render_submenu(renderer, font, submenu_selected, menu_options, 3, 200, NULL); // Menu principal
+                const char *menu_options[] = {"Solde", "Jeux", "Quitter"};
+                render_submenu(renderer, font, submenu_selected, menu_options, 3, 400, submenu_texture, 0); // Pas le menu "Solde"
             } else if (on_submenu == 0) {
-                const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"}; // Sous-menu Solde
-                render_submenu(renderer, font, submenu_selected, solde_options, 3, 200, banque_texture);
-            } else if (on_submenu == 1) {
-                const char *jeu_options[] = {"Roulette", "Surf", "Retour"}; // Sous-menu Jeux
-                render_submenu(renderer, font, submenu_selected, jeu_options, 3, 200, NULL);
+                const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"};
+                render_submenu(renderer, font, submenu_selected, solde_options, 3, 400, solde_texture, 1); // Menu "Solde" activé
+                render_balance(renderer, font);
             }
         } else {
-            SDL_RenderCopy(renderer, menu_texture, NULL, NULL);
-            render_text(renderer, font, "Commencer", yellow, 200, 300);
+            SDL_Rect bg_rect = {0, 0, 1672, 941};
+            SDL_RenderCopy(renderer, menu_texture, NULL, &bg_rect);
+            render_text(renderer, font, "Commencer", (SDL_Color){255, 255, 255, 255}, 740, 695);
         }
-
-        render_balance(renderer, font);
 
         SDL_RenderPresent(renderer);
     }
 
     SDL_DestroyTexture(menu_texture);
-    SDL_DestroyTexture(banque_texture);
+    SDL_DestroyTexture(submenu_texture);
+    SDL_DestroyTexture(solde_texture);
     TTF_CloseFont(font);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
