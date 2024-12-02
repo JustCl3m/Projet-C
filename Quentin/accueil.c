@@ -3,10 +3,21 @@
 #include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
+
 
 int balance = 0;  // Variable pour stocker le solde d'argent
+
+
+int SCREEN_WIDTH = 0;
+int SCREEN_HEIGHT = 0;
+
+// Fonction pour obtenir la taille de l'écran
+void screen_size(int *SCREEN_WIDTH, int *SCREEN_HEIGHT) {
+    SDL_DisplayMode DM;
+    SDL_GetCurrentDisplayMode(0, &DM);
+    *SCREEN_WIDTH = DM.w;
+    *SCREEN_HEIGHT = DM.h;
+}
 
 // Fonction pour afficher du texte
 void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, int x, int y) {
@@ -32,8 +43,7 @@ void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_C
 
 // Fonction pour afficher les options d'un sous-menu
 void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option, const char *options[], int num_options, int y_start, SDL_Texture *background_texture, int is_solde_menu) {
-    SDL_Color white = {255, 255, 255, 255};
-    SDL_Color yellow = {255, 255, 0, 255};
+    SDL_Color yellow = {255, 255, 255, 255};
     SDL_Color black = {0, 0, 0, 255}; // Ajout de la couleur noire
 
     // Dessiner l'image de fond (ajustée à 1920x1080)
@@ -44,8 +54,8 @@ void render_submenu(SDL_Renderer *renderer, TTF_Font *font, int selected_option,
 
     // Afficher les options
     for (int i = 0; i < num_options; i++) {
-        SDL_Color color = is_solde_menu ? black : (i == selected_option ? yellow : white);
-        render_text(renderer, font, options[i], color, 800, y_start + i * 100);  // Centré horizontalement
+        SDL_Color color = is_solde_menu ? black : (i == selected_option ? yellow : black);
+        render_text(renderer, font, options[i], color, (SCREEN_WIDTH/2)-(SCREEN_WIDTH/42), y_start + i* 160);  // Centré horizontalement
     }
 }
 
@@ -107,6 +117,7 @@ int main(int argc, char *argv[]) {
         SDL_Quit();
         return 1;
     }
+    screen_size(&SCREEN_WIDTH, &SCREEN_HEIGHT);
 
     // Charger les images (assurez-vous qu'elles soient en 1920x1080)
     SDL_Surface *menu_surface = IMG_Load("Plan_de_travail_1.png");
@@ -173,7 +184,7 @@ int main(int argc, char *argv[]) {
                     } else if (event.key.keysym.sym == SDLK_DOWN) {
                         submenu_selected = (submenu_selected + 1) % 3;
                     } else if (event.key.keysym.sym == SDLK_RETURN) {
-                        if (submenu_selected == 0) {
+                        if (submenu_selected == 1) {
                             on_submenu = 0;
                         } else if (submenu_selected == 2) {
                             running = 0;
@@ -202,8 +213,8 @@ int main(int argc, char *argv[]) {
 
         if (on_menu) {
             if (on_submenu == -1) {
-                const char *menu_options[] = {"Solde", "Jeux", "Quitter"};
-                render_submenu(renderer, font, submenu_selected, menu_options, 3, 400, submenu_texture, 0); // Pas le menu "Solde"
+                const char *menu_options[] = {"Jouer", "Banque", "Quitter"};
+                render_submenu(renderer, font, submenu_selected, menu_options, 3, (SCREEN_HEIGHT/2.725), submenu_texture, 0); // Pas le menu "Solde"
             } else if (on_submenu == 0) {
                 const char *solde_options[] = {"Ajouter de l'argent", "Retirer de l'argent", "Retour"};
                 render_submenu(renderer, font, submenu_selected, solde_options, 3, 400, solde_texture, 1); // Menu "Solde" activé
@@ -212,7 +223,7 @@ int main(int argc, char *argv[]) {
         } else {
             SDL_Rect bg_rect = {0, 0, SCREEN_WIDTH, SCREEN_HEIGHT};
             SDL_RenderCopy(renderer, menu_texture, NULL, &bg_rect);
-            render_text(renderer, font, "Commencer", (SDL_Color){255, 255, 255, 255}, (SCREEN_WIDTH/2)-90, SCREEN_HEIGHT-280);
+            render_text(renderer, font, "Commencer", (SDL_Color){255, 255, 255, 255}, (SCREEN_WIDTH/2)-SCREEN_WIDTH/20.21, SCREEN_HEIGHT-SCREEN_HEIGHT/3.857);
         }
 
         SDL_RenderPresent(renderer);
